@@ -188,10 +188,14 @@ function initWhiteboard() {
             function (data) {
                
 
-                const value = setInterval(redis_value,500)
-                console.log(data);
-                data = value.concat(data)
-                await client.set('whiteboard', 'data');
+                const interval = setInterval(function test(){
+                    const value = redis_value()
+                    console.log(data);
+                    data = value.concat(data)
+                    await client.set('whiteboard', 'data');
+
+                },500)
+                
                 whiteboard.loadData(data);
                 if (copyfromwid && data.length == 0) {
                     //Copy from witheboard if current is empty and get parameter is given
