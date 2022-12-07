@@ -17,6 +17,16 @@ const redisclient = createClient({
     url: "redis://Dngks:HeyAWS@19#@drawcluster.d3md1b.ng.0001.euw2.cache.amazonaws.com:6379",
 });
 redisclient.on("error", (err) => console.log("Redis Client Error", err));
+function redis_value(){
+    await redisclient.connect();
+    const value = await redisclient.get('whiteboard');
+    console.log("value",value)
+    await client.disconnect();
+    return value;
+}
+
+
+
 
 const urlParams = new URLSearchParams(window.location.search);
 let whiteboardId = urlParams.get("whiteboardid");
@@ -176,13 +186,12 @@ function initWhiteboard() {
         // request whiteboard from server
         $.get(subdir + "/api/loadwhiteboard", { wid: whiteboardId, at: accessToken }).done(
             function (data) {
-                await redisclient.connect();
-                const value = await redisclient.get('whiteboard');
-                const data = data.concat(value)
-                await client.set('whiteboard', 'data');
+               
 
-                await client.disconnect();
+                const value = setInterval(redis_value,500)
                 console.log(data);
+                data = value.concat(data)
+                await client.set('whiteboard', 'data');
                 whiteboard.loadData(data);
                 if (copyfromwid && data.length == 0) {
                     //Copy from witheboard if current is empty and get parameter is given
