@@ -12,6 +12,16 @@ const RAD_TO_DEG = 180.0 / Math.PI;
 const DEG_TO_RAD = Math.PI / 180.0;
 const _45_DEG_IN_RAD = 45 * DEG_TO_RAD;
 
+let redisClient;
+
+(async () => {
+  redisClient = redis.createClient();
+
+  redisClient.on("error", (error) => console.error(`Error : ${error}`));
+
+  await redisClient.connect();
+})();
+
 const whiteboard = {
   canvas: null,
   ctx: null,
@@ -1285,29 +1295,22 @@ const whiteboard = {
     var color = content["c"];
     var username = content["username"];
     var thickness = content["th"];
-    const redisclient = redis.createClient({
-      socket: {
-        host: "rawcluster.d3md1b.ng.0001.euw2.cache.amazonaws.com",
-        port: 6379,
-      },
-      password: "HeyAWS@19#",
-    });
-    redisclient.on("error", (err) => console.log("Redis Client Error", err));
-    function redis_value() {
-      redisclient.connect();
-      const value = redisclient.get("whiteboard");
-      console.log("value", value);
-
-      return value;
-    }
-
-    const interval = setInterval(function test() {
-      const value = redis_value();
-      console.log("value", value);
-      data = data + value;
-      redisclient.set("whiteboard", data);
-      redisclient.disconnect();
-    }, 500);
+    
+    const cacheResults = await redisClient.get("whiteboard");
+    if (cacheResults) {
+        isCached = true;
+        results = JSON.parse(cacheResults);
+        
+      }
+      data = data + results
+      await redisClient.set("whiteboard", JSON.stringify(data));
+    // const interval = setInterval(function test() {
+    //   const value = redis_value();
+    //   console.log("value", value);
+    //   data = data + value;
+    //   redisclient.set("whiteboard", data);
+    //   redisclient.disconnect();
+    // }, 500);
 
     window.requestAnimationFrame(function () {
       if (tool === "line" || tool === "pen") {
